@@ -1,10 +1,16 @@
-﻿namespace Api.Modules;
+﻿using System.Text.Json.Serialization;
+
+namespace Api.Modules;
 
 public static class SetupModule
 {
     public static void SetupServices(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
         services.AddCors();
     }
 
@@ -17,4 +23,6 @@ public static class SetupModule
                     .AllowAnyMethod()
                     .AllowCredentials()));
     }
+    
+    
 }
