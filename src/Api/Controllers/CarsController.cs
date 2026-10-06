@@ -11,9 +11,14 @@ namespace Api.Controllers;
 public class CarsController(ICarService carService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<CarDto>>> GetCars(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<CarDto>>> GetCars(
+        [FromQuery] string? brand,
+        [FromQuery] bool? isAvailable,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        CancellationToken cancellationToken)
     {
-        var cars = await carService.GetCars(cancellationToken);
+        var cars = await carService.GetCars(brand, isAvailable, minPrice, maxPrice, cancellationToken);
         return Ok(cars.Select(CarDto.FromDomainModel).ToList());
     }
     [HttpGet("{id:guid}")]

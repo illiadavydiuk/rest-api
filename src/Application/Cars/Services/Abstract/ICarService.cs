@@ -4,7 +4,12 @@ namespace Application.Cars.Services.Abstract;
 
 public interface ICarService
 {
-    Task<IReadOnlyList<Car>> GetCars(CancellationToken cancellationToken);
+    Task<IReadOnlyList<Car>> GetCars(
+        string? brand,
+        bool? isAvailable,
+        decimal? minPrice,
+        decimal? maxPrice,
+        CancellationToken cancellationToken);
     Task<Car?> GetCar(Guid id, CancellationToken cancellationToken);
     Task<Car> Add(string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable, CancellationToken cancellationToken);
     Task<Car?> Update(Guid id, string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable, CancellationToken cancellationToken);

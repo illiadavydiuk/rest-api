@@ -9,13 +9,36 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository
     // private readonly List<Car> _cars = [];
     // private readonly Lock _lock = new();
     
-    public async Task<IReadOnlyList<Car>> GetAll(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Car>> GetAll(
+        string? brand, 
+        bool? isAvailable,
+        decimal? minPrice, 
+        decimal? maxPrice,
+        CancellationToken cancellationToken)
     {
-        // lock (_lock) return Task.FromResult<IReadOnlyList<Car>>(_cars.ToList());
-        return await context.Cars.ToListAsync(cancellationToken); 
-        // var query = context.Cars.AsQueryable();
-        //
-        // return await query.ToListAsync(cancellationToken);
+        var query = context.Cars.AsQueryable();
+        
+        if (!string.IsNullOrWhiteSpace(brand))
+        {
+            query = query.Where(c => c.Brand.ToLower().Contains(brand.ToLower()));
+        }
+
+        if (isAvailable.HasValue)
+        {
+            query = query.Where(c => c.IsAvailable == isAvailable.Value);
+        }
+
+        if (minPrice.HasValue)
+        {
+            query = query.Where(c => c.Price >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(c => c.Price <= maxPrice.Value);
+        }
+        
+        return await query.ToListAsync(cancellationToken); 
     }
     
 

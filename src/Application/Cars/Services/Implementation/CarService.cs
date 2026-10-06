@@ -6,9 +6,14 @@ namespace Application.Cars.Services.Implementation;
 
 public class CarService(ICarRepository carRepository) : ICarService
 {
-    public async Task<IReadOnlyList<Car>> GetCars(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Car>> GetCars(
+        string? brand, 
+        bool? isAvailable, 
+        decimal? minPrice, 
+        decimal? maxPrice,
+        CancellationToken cancellationToken)
     {
-        return await carRepository.GetAll(cancellationToken);
+        return await carRepository.GetAll(brand, isAvailable, minPrice, maxPrice, cancellationToken);
     }
 
     public async Task<Car?> GetCar(Guid id, CancellationToken cancellationToken)
