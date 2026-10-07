@@ -1,10 +1,11 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces.Queries;
 using Domain.Cars;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
 
-public class CarRepository(ApplicationDbContext context) : ICarRepository
+public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQueries
 {
     // private readonly List<Car> _cars = [];
     // private readonly Lock _lock = new();
@@ -16,7 +17,7 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository
         decimal? maxPrice,
         CancellationToken cancellationToken)
     {
-        var query = context.Cars.AsQueryable();
+        var query = context.Cars.AsNoTracking().AsQueryable();
         
         if (!string.IsNullOrWhiteSpace(brand))
         {

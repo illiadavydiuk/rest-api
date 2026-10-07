@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces.Queries;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -36,5 +37,6 @@ public static class ConfigurePersistenceServices
     {
         services.AddScoped<CarRepository>();
         services.AddScoped<ICarRepository>(provider => provider.GetRequiredService<CarRepository>());
+        services.AddScoped<ICarQueries>(provider => provider.GetRequiredService<CarRepository>());
     }
 }
