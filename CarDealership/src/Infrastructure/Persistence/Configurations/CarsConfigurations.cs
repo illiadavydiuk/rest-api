@@ -10,6 +10,8 @@ public class CarsConfiguration : IEntityTypeConfiguration<Car>
     public void Configure(EntityTypeBuilder<Car> builder)
     {
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id)
+            .HasConversion(x => x.Value, x => new CarId(x));
 
         builder.Property(x => x.Vin)
             .HasColumnType("varchar(17)")

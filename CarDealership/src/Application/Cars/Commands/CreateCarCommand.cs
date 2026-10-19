@@ -1,10 +1,12 @@
-﻿using Application.Common.Interfaces;
+﻿using Application.Cars.Exceptions;
+using Application.Common.Interfaces.Repositories;
 using Domain.Cars;
+using LanguageExt;
 using MediatR;
 
 namespace Application.Cars.Commands;
 
-public record CreateCarCommand : IRequest<Car>
+public record CreateCarCommand : IRequest<Either<CarException, Car>>
 {
     public required string Vin { get; init; }
     public required string Brand { get; init; }
@@ -14,27 +16,31 @@ public record CreateCarCommand : IRequest<Car>
     public required bool IsAvailable { get; init; }
 }
 
-public class CreateCarCommandHandeler(ICarRepository carRepository) : IRequestHandler<CreateCarCommand, Car>
+public class CreateCarCommandHandler(ICarRepository carRepository) 
+    : IRequestHandler<CreateCarCommand, Either<CarException, Car>>
 {
-    public async Task<Car> Handle(CreateCarCommand request, CancellationToken cancellationToken)
+    public async Task<Either<CarException, Car>> Handle(CreateCarCommand request, CancellationToken cancellationToken)
     {
         var existingCar = await carRepository.GetByVin(request.Vin, cancellationToken);
+        
+        return await existingCar.MatchAsync(
+            c => new CarAlreadyExistsException(c.Id),
+            () => CreateEntity(request, cancellationToken));
+    }
 
-        if (existingCar != null)
+    private async Task<Either<CarException, Car>> CreateEntity(CreateCarCommand request,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            throw new ArgumentException($"Car with Vin '{request.Vin}' already exists");
+            var car = Car.New(CarId.New(), request.Vin, request.Brand, request.Model, request.Price, request.FuelType, 
+                request.IsAvailable);
+            await carRepository.Add(car, cancellationToken);
+            return car;
         }
-
-        var car = Car.New(
-            Guid.NewGuid(),
-            request.Vin,
-            request.Brand,
-            request.Model,
-            request.Price,
-            request.FuelType,
-            request.IsAvailable);
-
-        await carRepository.Add(car, cancellationToken);
-        return car;
+        catch (Exception ex)
+        {
+            return new CarUnhandledException(CarId.Empty(), ex);
+        }
     }
 }

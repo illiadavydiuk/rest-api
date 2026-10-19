@@ -1,4 +1,5 @@
 ﻿using Domain.Cars;
+using LanguageExt;
 
 namespace Application.Common.Interfaces.Queries;
 
@@ -10,5 +11,5 @@ public interface ICarQueries
         decimal? minPrice, 
         decimal? maxPrice,
         CancellationToken cancellationToken);
-    Task<Car?> GetById(Guid id, CancellationToken cancellationToken);
+    Task<Option<Car>> GetById(CarId id, CancellationToken cancellationToken);
 }

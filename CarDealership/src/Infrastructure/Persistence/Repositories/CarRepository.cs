@@ -1,15 +1,13 @@
-﻿using Application.Common.Interfaces;
-using Application.Common.Interfaces.Queries;
+﻿using Application.Common.Interfaces.Queries;
+using Application.Common.Interfaces.Repositories;
 using Domain.Cars;
+using LanguageExt;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
 
 public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQueries
 {
-    // private readonly List<Car> _cars = [];
-    // private readonly Lock _lock = new();
-    
     public async Task<IReadOnlyList<Car>> GetAll(
         string? brand, 
         bool? isAvailable,
@@ -43,26 +41,21 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQ
     }
     
 
-    public async Task<Car?> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<Option<Car>> GetById(CarId id, CancellationToken cancellationToken)
     {
-        // lock (_lock) return Task.FromResult<Car?>(_cars.FirstOrDefault(x => x.Id == id));
-        
-        return await context.Cars.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var entity = await context.Cars.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return entity ?? Option<Car>.None;
     }
 
-    public async Task<Car?> GetByVin(string vin, CancellationToken cancellationToken)
+    public async Task<Option<Car>> GetByVin(string vin, CancellationToken cancellationToken)
     {
-        // lock (_lock) return Task.FromResult<Car?>(_cars.FirstOrDefault(x => string.Equals(x.Vin, vin, StringComparison.OrdinalIgnoreCase)));
-        
-        return await context.Cars.FirstOrDefaultAsync(x => 
+       var entity = await context.Cars.FirstOrDefaultAsync(x => 
             x.Vin == vin, cancellationToken);
+        return entity ?? Option<Car>.None;
     }
 
     public async Task<Car> Add(Car car, CancellationToken cancellationToken)
     {
-        // lock (_lock) _cars.Add(car);
-        // return Task.FromResult(car);
-        
         await context.Cars.AddAsync(car, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return car;
@@ -70,13 +63,6 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQ
 
     public async Task<Car> Update(Car car, CancellationToken cancellationToken)
     {
-        // lock (_lock)
-        // {
-        //     var idx = _cars.FindIndex(x => x.Id == car.Id);
-        //     if (idx != -1) _cars[idx] = car;
-        // }
-        // return Task.FromResult(car);
-        
         context.Cars.Update(car);
         await context.SaveChangesAsync(cancellationToken);
         return car;
@@ -84,9 +70,6 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQ
 
     public async Task Delete(Car car, CancellationToken cancellationToken)
     {
-        // lock (_lock) _cars.RemoveAll(x => x.Id == car.Id);
-        // return Task.CompletedTask;
-        
         context.Cars.Remove(car);
         await context.SaveChangesAsync(cancellationToken);
     }

@@ -1,4 +1,5 @@
 ﻿using Api.Dtos;
+using Api.Modules.Errors;
 using Application.Cars.Commands;
 using Application.Common.Interfaces.Queries;
 using Domain.Cars;
@@ -6,7 +7,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
-
 
 [Route("cars")]
 [ApiController]
@@ -23,12 +23,14 @@ public class CarsController(ISender sender, ICarQueries carQueries) : Controller
         var cars = await carQueries.GetAll(brand, isAvailable, minPrice, maxPrice, cancellationToken);
         return Ok(cars.Select(CarDto.FromDomainModel).ToList());
     }
+    
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<CarDto>> GetCar(Guid id, CancellationToken cancellationToken)
     {
-        var car = await carQueries.GetById(id, cancellationToken);
-        if (car is null) return NotFound();
-        return Ok(CarDto.FromDomainModel(car));
+        var car = await carQueries.GetById(new CarId(id), cancellationToken);
+        return car.Match<ActionResult<CarDto>>(
+            c => CarDto.FromDomainModel(c),
+            () => NotFound());
     }
 
     [HttpPost]
@@ -44,16 +46,10 @@ public class CarsController(ISender sender, ICarQueries carQueries) : Controller
             IsAvailable = request.IsAvailable
         };
         
-        try
-        {
-            var car = await sender.Send(command, cancellationToken);
-            var dto = CarDto.FromDomainModel(car);
-            return CreatedAtAction(nameof(GetCar), new { id = dto.Id }, dto);
-        }
-        catch (ArgumentException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        var result = await sender.Send(command, cancellationToken);
+        return result.Match<ActionResult<CarDto>>(
+            c => CreatedAtAction(nameof(GetCar), new { id = c.Id.Value }, CarDto.FromDomainModel(c)),
+            e => e.ToObjectResult());
     }
 
     [HttpPut("{id:guid}")]
@@ -70,34 +66,20 @@ public class CarsController(ISender sender, ICarQueries carQueries) : Controller
             IsAvailable = request.IsAvailable
         };
         
-        try
-        {
-            var updated = await sender.Send(command, cancellationToken);
-
-            if (updated is null)
-            {
-                return NotFound();
-            }
-
-            return Ok(CarDto.FromDomainModel(updated));
-        }
-        catch (ArgumentException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        var result = await sender.Send(command, cancellationToken);
+        return result.Match<ActionResult<CarDto>>(
+            c => Ok(CarDto.FromDomainModel(c)),
+            e => e.ToObjectResult());
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteCar(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteCarCommand { CarId = id };
-        var deleted = await sender.Send(command, cancellationToken);
+        var result = await sender.Send(command, cancellationToken);
         
-        if (!deleted)
-        {
-            return NotFound();
-        }
-
-        return NoContent();
+        return result.Match<IActionResult>(
+            _ => NoContent(),
+            e => e.ToObjectResult());
     }
 }

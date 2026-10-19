@@ -2,7 +2,7 @@
 
 public class Car
 {
-    public Guid Id { get; }
+    public CarId Id { get; }
     public string Vin { get; private set; }
     public string Brand { get; private set; }
     public string Model { get; private set; }
@@ -11,10 +11,10 @@ public class Car
     public bool IsAvailable { get; private set; }
     public DateTime CreatedAt { get; }
 
-    private Car(Guid id, string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable, DateTime createdAt)
+    private Car(CarId id, string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable, DateTime createdAt)
         => (Id, Vin, Brand, Model, Price, FuelType, IsAvailable, CreatedAt) = (id, vin, brand, model, price, fuelType, isAvailable, createdAt);
 
-    public static Car New(Guid id, string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable)
+    public static Car New(CarId id, string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable)
         => new(id, vin, brand, model, price, fuelType, isAvailable, DateTime.UtcNow);
 
     public void UpdateDetails(string vin, string brand, string model, decimal price, FuelType fuelType, bool isAvailable)
