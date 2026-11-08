@@ -19,3 +19,5 @@ await app.InitialiseDatabaseAsync();
 app.UseCors();
 app.MapControllers();
 app.Run();
+
+public partial class Program{}
