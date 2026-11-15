@@ -1,4 +1,5 @@
-﻿using Domain.Cars;
+﻿using Domain.Brands;
+using Domain.Cars;
 using Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,10 +20,15 @@ public class CarsConfiguration : IEntityTypeConfiguration<Car>
 
         builder.HasIndex(x => x.Vin)
             .IsUnique();
-
-        builder.Property(x => x.Brand)
-            .HasColumnType("varchar(100)")
-            .IsRequired();
+        
+        builder.Property(x => x.BrandId)
+            .HasConversion(x => x.Value, x => new BrandId(x));
+        
+        builder.HasOne(x => x.Brand)
+            .WithMany()
+            .HasForeignKey(x => x.BrandId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.Model)
             .HasColumnType("varchar(100)")

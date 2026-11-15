@@ -24,10 +24,10 @@ public static class CarsTestData
     
     public static Car CreateInvalidTestCar() => Car.New(
         CarId.New(),
-        "", // Порожній VIN
+        "", 
         "InvalidBrand",
         "InvalidModel",
-        -500.00m, // Від'ємна ціна
+        -500.00m, 
         FuelType.Gasoline,
         true);
     
