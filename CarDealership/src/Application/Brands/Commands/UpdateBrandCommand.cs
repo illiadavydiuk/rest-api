@@ -35,7 +35,7 @@ public class UpdateBrandCommandHandler(IBrandRepository brandRepository)
     {
         var brand = await brandRepository.GetByName(name, cancellationToken);
         return brand.Match<Either<BrandException, Unit>>(
-            b => b.Id == currentBrandId ? Unit.Default : new BrandAlreadyExistsException(b.Id),
+            b => b.Id == currentBrandId ? Unit.Default : new BrandAlreadyExistsException(b.Id, b.Name),
             () => Unit.Default);
     }
 

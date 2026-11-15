@@ -8,8 +8,8 @@ public abstract class BrandException(BrandId brandId, string message, Exception?
     public BrandId BrandId { get; } = brandId;
 }
 
-public class BrandAlreadyExistsException(BrandId brandId)
-    : BrandException(brandId, $"Brand with ID '{brandId}' already exists");
+public class BrandAlreadyExistsException(BrandId brandId, string name)
+    : BrandException(brandId, $"Brand with name '{name}' already exists (ID: '{brandId}')");
 
 public class BrandNotFoundException(BrandId brandId)
     : BrandException(brandId, $"Brand with ID '{brandId}' not found");

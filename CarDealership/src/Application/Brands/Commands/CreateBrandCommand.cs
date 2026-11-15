@@ -20,7 +20,7 @@ public class CreateBrandCommandHandler(IBrandRepository brandRepository)
         var existingBrand = await brandRepository.GetByName(request.Name, cancellationToken);
 
         return await existingBrand.MatchAsync(
-            b => new BrandAlreadyExistsException(b.Id),
+            b => new BrandAlreadyExistsException(b.Id, b.Name),
             () => CreateEntity(request, cancellationToken));
     }
 
