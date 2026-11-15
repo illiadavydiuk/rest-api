@@ -1,4 +1,6 @@
-﻿namespace Domain.Brands;
+﻿using Domain.Cars;
+
+namespace Domain.Brands;
 
 public class Brand
 {
@@ -7,6 +9,8 @@ public class Brand
     public string Country { get; private set; }
     public DateTime CreatedAt { get; }
 
+    public ICollection<Car> Cars { get; } = null;
+    
     private Brand(BrandId id, string name, string country, DateTime createdAt)
         => (Id, Name, Country, CreatedAt) = (id, name, country, createdAt);
 

@@ -22,17 +22,47 @@ namespace Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Cars.Car", b =>
+            modelBuilder.Entity("Domain.Brands.Brand", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Brand")
+                    b.Property<string>("Country")
                         .IsRequired()
                         .HasColumnType("varchar(100)")
-                        .HasColumnName("brand");
+                        .HasColumnName("country");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("timezone('utc', now())");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_brands");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_brands_name");
+
+                    b.ToTable("brands", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Cars.Car", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -66,11 +96,31 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_cars");
 
+                    b.HasIndex("BrandId")
+                        .HasDatabaseName("ix_cars_brand_id");
+
                     b.HasIndex("Vin")
                         .IsUnique()
                         .HasDatabaseName("ix_cars_vin");
 
                     b.ToTable("cars", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Cars.Car", b =>
+                {
+                    b.HasOne("Domain.Brands.Brand", "Brand")
+                        .WithMany("Cars")
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_cars_brands_brand_id");
+
+                    b.Navigation("Brand");
+                });
+
+            modelBuilder.Entity("Domain.Brands.Brand", b =>
+                {
+                    b.Navigation("Cars");
                 });
 #pragma warning restore 612, 618
         }

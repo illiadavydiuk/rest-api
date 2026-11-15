@@ -12,7 +12,7 @@ public static class CarErrorFactory
             StatusCode = error switch
             {
                 CarAlreadyExistsException => StatusCodes.Status409Conflict,
-                CarNotFoundException => StatusCodes.Status404NotFound,
+                CarNotFoundException or BrandNotFoundForCarException => StatusCodes.Status404NotFound,
                 CarUnhandledException => StatusCodes.Status500InternalServerError,
                 _ => throw new NotImplementedException("Car error handler is not implemented.")
             }

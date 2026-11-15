@@ -39,7 +39,7 @@ public class CarsController(ISender sender, ICarQueries carQueries) : Controller
         var command = new CreateCarCommand
         {
             Vin = request.Vin,
-            Brand = request.Brand,
+            BrandId = request.BrandId,
             Model = request.Model,
             Price = request.Price,
             FuelType = request.FuelType,
@@ -59,7 +59,7 @@ public class CarsController(ISender sender, ICarQueries carQueries) : Controller
         {
             CarId = id,
             Vin = request.Vin,
-            Brand = request.Brand,
+            BrandId = request.BrandId,
             Model = request.Model,
             Price = request.Price,
             FuelType = request.FuelType,

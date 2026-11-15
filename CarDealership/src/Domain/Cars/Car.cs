@@ -13,7 +13,7 @@ public class Car
     public bool IsAvailable { get; private set; }
     public DateTime CreatedAt { get; }
     
-    public Brand Brand { get; private set; } = default!;
+    public Brand Brand { get; } = null;
 
     private Car(CarId id, string vin, BrandId brandId, string model, decimal price, FuelType fuelType, bool isAvailable, DateTime createdAt)
         => (Id, Vin, BrandId, Model, Price, FuelType, IsAvailable, CreatedAt) = (id, vin, brandId, model, price, fuelType, isAvailable, createdAt);

@@ -15,11 +15,14 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQ
         decimal? maxPrice,
         CancellationToken cancellationToken)
     {
-        var query = context.Cars.AsNoTracking().AsQueryable();
+        var query = context.Cars
+            .Include(c => c.Brand)
+            .AsNoTracking()
+            .AsQueryable();
         
         if (!string.IsNullOrWhiteSpace(brand))
         {
-            query = query.Where(c => c.Brand.ToLower().Contains(brand.ToLower()));
+            query = query.Where(c => c.Brand.Name.ToLower().Contains(brand.ToLower()));
         }
 
         if (isAvailable.HasValue)
@@ -43,7 +46,10 @@ public class CarRepository(ApplicationDbContext context) : ICarRepository, ICarQ
 
     public async Task<Option<Car>> GetById(CarId id, CancellationToken cancellationToken)
     {
-        var entity = await context.Cars.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var entity = await context.Cars
+            .Include(c => c.Brand)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
         return entity ?? Option<Car>.None;
     }
 

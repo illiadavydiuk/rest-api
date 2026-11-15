@@ -25,7 +25,7 @@ public class CarsConfiguration : IEntityTypeConfiguration<Car>
             .HasConversion(x => x.Value, x => new BrandId(x));
         
         builder.HasOne(x => x.Brand)
-            .WithMany()
+            .WithMany(x => x.Cars)
             .HasForeignKey(x => x.BrandId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);

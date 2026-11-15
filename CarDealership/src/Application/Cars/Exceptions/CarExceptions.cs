@@ -1,4 +1,5 @@
-﻿using Domain.Cars;
+﻿using Domain.Brands;
+using Domain.Cars;
 
 namespace Application.Cars.Exceptions;
 
@@ -14,5 +15,11 @@ public class CarAlreadyExistsException(CarId carId)
 public class CarNotFoundException(CarId carId)
     : CarException(carId, $"Car with ID '{carId}' not found");
 
+public class BrandNotFoundForCarException(BrandId brandId)
+    : CarException(CarId.Empty(), $"Brand with ID '{brandId}' not found")
+{
+    public BrandId BrandId { get; } = brandId;
+}
+
 public class CarUnhandledException(CarId carId, Exception? innerException = null)
-    : CarException(carId, $"Unhandled exception under id {carId}", innerException);   
+    : CarException(carId, $"Unhandled exception under id {carId}", innerException); 

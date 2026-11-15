@@ -39,5 +39,8 @@ public static class ConfigurePersistenceServices
         services.AddScoped<CarRepository>();
         services.AddScoped<ICarRepository>(provider => provider.GetRequiredService<CarRepository>());
         services.AddScoped<ICarQueries>(provider => provider.GetRequiredService<CarRepository>());
+        services.AddScoped<BrandRepository>();
+        services.AddScoped<IBrandRepository>(provider => provider.GetRequiredService<BrandRepository>());
+        services.AddScoped<IBrandQueries>(provider => provider.GetRequiredService<BrandRepository>());
     }
 }

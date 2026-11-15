@@ -1,5 +1,7 @@
-﻿using Application.Cars.Exceptions;
+﻿using Application.Brands.Exceptions;
+using Application.Cars.Exceptions;
 using Application.Common.Interfaces.Repositories;
+using Domain.Brands;
 using Domain.Cars;
 using LanguageExt;
 using MediatR;
@@ -11,14 +13,16 @@ public record UpdateCarCommand : IRequest<Either<CarException, Car>>
 {
     public required Guid CarId { get; init; }
     public required string Vin { get; init; }
-    public required string Brand { get; init; }
+    public required Guid BrandId { get; init; }
     public required string Model { get; init; }
     public required decimal Price { get; init; }
     public required FuelType FuelType { get; init; }
     public required bool IsAvailable { get; init; }
 }
 
-public class UpdateCarCommandHandler(ICarRepository carRepository)
+public class UpdateCarCommandHandler(
+    ICarRepository carRepository,
+    IBrandRepository brandRepository)
     : IRequestHandler<UpdateCarCommand, Either<CarException, Car>>
 {
     public async Task<Either<CarException, Car>> Handle(UpdateCarCommand request, CancellationToken cancellationToken)
@@ -27,9 +31,18 @@ public class UpdateCarCommandHandler(ICarRepository carRepository)
         var car = await carRepository.GetById(carId, cancellationToken);
 
         return await car.MatchAsync(
-            c => CheckDuplicates(c.Id, request.Vin, cancellationToken)
-                .BindAsync(_ => UpdateEntity(c, request, cancellationToken)),
+            c => CheckBrandExists(new BrandId(request.BrandId), cancellationToken)
+                .BindAsync(brandId => CheckDuplicates(c.Id, request.Vin, cancellationToken)
+                    .BindAsync(_ => UpdateEntity(c, brandId, request, cancellationToken))),
             () => new CarNotFoundException(carId));
+    }
+
+    private async Task<Either<CarException, BrandId>> CheckBrandExists(BrandId brandId, CancellationToken cancellationToken)
+    {
+        var brand = await brandRepository.GetById(brandId, cancellationToken);
+        return brand.Match<Either<CarException, BrandId>>(
+            b => b.Id,
+            () => new BrandNotFoundForCarException(brandId));
     }
 
     private async Task<Either<CarException, Unit>> CheckDuplicates(CarId currentCarId, string vin, CancellationToken cancellationToken)
@@ -40,11 +53,15 @@ public class UpdateCarCommandHandler(ICarRepository carRepository)
             () => Unit.Default);
     }
 
-    private async Task<Either<CarException, Car>> UpdateEntity(Car car, UpdateCarCommand request, CancellationToken cancellationToken)
+    private async Task<Either<CarException, Car>> UpdateEntity(
+        Car car,
+        BrandId brandId,
+        UpdateCarCommand request,
+        CancellationToken cancellationToken)
     {
         try
         {
-            car.UpdateDetails(request.Vin, request.Brand, request.Model, request.Price, request.FuelType, request.IsAvailable);
+            car.UpdateDetails(request.Vin, brandId, request.Model, request.Price, request.FuelType, request.IsAvailable);
             await carRepository.Update(car, cancellationToken);
             return car;
         }
