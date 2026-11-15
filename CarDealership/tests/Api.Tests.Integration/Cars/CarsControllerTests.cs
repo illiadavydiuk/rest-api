@@ -59,6 +59,8 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
     
     public async Task InitializeAsync()
     {
+        await Context.Cars.ExecuteDeleteAsync();
+
         await Context.Brands.AddAsync(_testBrand);
         await Context.Cars.AddAsync(_createTakenTestCar);
         await Context.Cars.AddAsync(_updateTakenTestCar);
@@ -69,11 +71,104 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        Context.Cars.RemoveRange(Context.Cars);
-        Context.Brands.Remove(_testBrand);
+        await Context.Cars.ExecuteDeleteAsync();
+        await Context.Brands
+            .Where(b => b.Id == _testBrand.Id)
+            .ExecuteDeleteAsync();
         
-        await Context.SaveChangesAsync();
         Context.ChangeTracker.Clear();
+    }
+    
+    [Fact]
+    public async Task ShouldGetAllCars()
+    {
+        // Act
+        var response = await Client.GetAsync(_createCarRoute);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var cars = await response.Content.ReadFromJsonAsync<List<CarDto>>(JsonOptions);
+        cars.Should().NotBeNull();
+        cars!.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task ShouldGetCarById()
+    {
+        // Act
+        var response = await Client.GetAsync($"cars/{_createTakenTestCar.Id.Value}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var car = await response.Content.ReadFromJsonAsync<CarDto>(JsonOptions);
+        car.Should().NotBeNull();
+        car!.Id.Should().Be(_createTakenTestCar.Id.Value);
+        car.Vin.Should().Be(_createTakenTestCar.Vin);
+        car.BrandName.Should().Be(_testBrand.Name);
+    }
+
+    [Fact]
+    public async Task ShouldNotGetCarBecauseNotFound()
+    {
+        // Act
+        var response = await Client.GetAsync($"cars/{CarsTestData.NonExistentTestCarId()}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ShouldFilterCarsByQueryParameters()
+    {
+        // _createTakenTestCar: Price = 42500, IsAvailable = true
+        // _updateTakenTestCar: Price = 31500, IsAvailable = true
+        var url = $"cars?brand={_testBrand.Name}&isAvailable=true&minPrice=35000&maxPrice=50000";
+
+        // Act
+        var response = await Client.GetAsync(url);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var cars = await response.Content.ReadFromJsonAsync<List<CarDto>>(JsonOptions);
+        cars.Should().NotBeNull();
+        cars!.Should().ContainSingle();
+        cars[0].Id.Should().Be(_createTakenTestCar.Id.Value);
+    }
+
+    [Fact]
+    public async Task ShouldReturnEmptyListWhenNoCarsMatchQueryParameters()
+    {
+        // Act
+        var response = await Client.GetAsync("cars?minPrice=9999999");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var cars = await response.Content.ReadFromJsonAsync<List<CarDto>>(JsonOptions);
+        cars.Should().NotBeNull();
+        cars!.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldNotUpdateCarBecauseBrandNotFound()
+    {
+        // Arrange
+        var request = new UpdateCarDto(
+            _updateValidTestCar.Vin,
+            BrandsTestData.NonExistentTestBrandId(),
+            _updateValidTestCar.Model,
+            _updateValidTestCar.Price,
+            _updateValidTestCar.FuelType,
+            _updateValidTestCar.IsAvailable);
+
+        // Act
+        var response = await Client.PutAsJsonAsync(_updateExistingCarRoute, request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
     
     [Fact]

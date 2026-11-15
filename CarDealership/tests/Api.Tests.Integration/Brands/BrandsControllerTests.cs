@@ -113,6 +113,36 @@ public class BrandsControllerTests : BaseIntegrationTest, IAsyncLifetime
     }
 
     [Fact]
+    public async Task ShouldFilterBrandsByNameAndCountry()
+    {
+        // _createTakenTestBrand: Name = "Porsche", Country = "Germany"
+        // _updateTakenTestBrand: Name = "Audi", Country = "Germany"
+        var response = await Client.GetAsync("brands?name=por&country=Germany");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var brands = await response.Content.ReadFromJsonAsync<List<BrandDto>>(JsonOptions);
+        brands.Should().NotBeNull();
+        brands!.Should().ContainSingle();
+        brands[0].Id.Should().Be(_createTakenTestBrand.Id.Value);
+    }
+
+    [Fact]
+    public async Task ShouldReturnEmptyListWhenNoBrandsMatchQueryParameters()
+    {
+        // Act
+        var response = await Client.GetAsync("brands?country=NonExistentCountry123");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var brands = await response.Content.ReadFromJsonAsync<List<BrandDto>>(JsonOptions);
+        brands.Should().NotBeNull();
+        brands!.Should().BeEmpty();
+    }
+    
+    [Fact]
     public async Task ShouldNotGetBrandBecauseNotFound()
     {
         // Act
