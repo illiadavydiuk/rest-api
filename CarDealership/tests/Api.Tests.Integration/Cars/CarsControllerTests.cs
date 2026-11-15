@@ -3,10 +3,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Api.Dtos;
+using Domain.Brands;
 using Domain.Cars;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Tests.Common;
+using Tests.Data.Brands;
 using Tests.Data.Cars;
 using Xunit;
 
@@ -14,6 +16,7 @@ namespace Api.Tests.Integration.Cars;
 
 public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
 {
+    private readonly Brand _testBrand;
     private readonly Car _createValidTestCar;
     private readonly Car _createTakenTestCar;
     private readonly Car _createInvalidTestCar;
@@ -36,12 +39,14 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
     public CarsControllerTests(IntegrationTestWebFactory factory)
         : base(factory)
     {
-        _createValidTestCar = CarsTestData.CreateValidTestCar();
-        _createTakenTestCar = CarsTestData.CreateTakenTestCar();
-        _createInvalidTestCar = CarsTestData.CreateInvalidTestCar();
-        _updateValidTestCar = CarsTestData.UpdateValidTestCar();
-        _updateTakenTestCar = CarsTestData.UpdateTakenTestCar();
-        _updateInvalidTestCar = CarsTestData.UpdateInvalidTestCar();
+        _testBrand = BrandsTestData.CreateTestBrandForCars();
+
+        _createValidTestCar = CarsTestData.CreateValidTestCar(_testBrand.Id);
+        _createTakenTestCar = CarsTestData.CreateTakenTestCar(_testBrand.Id);
+        _createInvalidTestCar = CarsTestData.CreateInvalidTestCar(_testBrand.Id);
+        _updateValidTestCar = CarsTestData.UpdateValidTestCar(_testBrand.Id);
+        _updateTakenTestCar = CarsTestData.UpdateTakenTestCar(_testBrand.Id);
+        _updateInvalidTestCar = CarsTestData.UpdateInvalidTestCar(_testBrand.Id);
 
         var nonExistentCarId = CarsTestData.NonExistentTestCarId();
 
@@ -54,6 +59,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
     
     public async Task InitializeAsync()
     {
+        await Context.Brands.AddAsync(_testBrand);
         await Context.Cars.AddAsync(_createTakenTestCar);
         await Context.Cars.AddAsync(_updateTakenTestCar);
         
@@ -64,6 +70,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
     public async Task DisposeAsync()
     {
         Context.Cars.RemoveRange(Context.Cars);
+        Context.Brands.Remove(_testBrand);
         
         await Context.SaveChangesAsync();
         Context.ChangeTracker.Clear();
@@ -75,7 +82,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var request = new CreateCarDto(
             _createValidTestCar.Vin,
-            _createValidTestCar.Brand,
+            _createValidTestCar.BrandId.Value,
             _createValidTestCar.Model,
             _createValidTestCar.Price,
             _createValidTestCar.FuelType,
@@ -89,15 +96,36 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         
         var responseDto = await response.Content.ReadFromJsonAsync<CarDto>(JsonOptions);
         responseDto.Should().NotBeNull();
+        responseDto!.BrandName.Should().Be(_testBrand.Name);
 
-        var dbCar = await Context.Cars.FirstOrDefaultAsync(x => x.Id == new CarId(responseDto!.Id));
+        var dbCar = await Context.Cars.FirstOrDefaultAsync(x => x.Id == new CarId(responseDto.Id));
         dbCar.Should().NotBeNull();
         dbCar!.Vin.Should().Be(_createValidTestCar.Vin);
-        dbCar.Brand.Should().Be(_createValidTestCar.Brand);
+        dbCar.BrandId.Should().Be(_createValidTestCar.BrandId);
         dbCar.Model.Should().Be(_createValidTestCar.Model);
         dbCar.Price.Should().Be(_createValidTestCar.Price);
         dbCar.FuelType.Should().Be(_createValidTestCar.FuelType);
         dbCar.IsAvailable.Should().Be(_createValidTestCar.IsAvailable);
+    }
+
+    [Fact]
+    public async Task ShouldNotCreateCarBecauseBrandNotFound()
+    {
+        // Arrange
+        var request = new CreateCarDto(
+            _createValidTestCar.Vin,
+            BrandsTestData.NonExistentTestBrandId(),
+            _createValidTestCar.Model,
+            _createValidTestCar.Price,
+            _createValidTestCar.FuelType,
+            _createValidTestCar.IsAvailable);
+
+        // Act
+        var response = await Client.PostAsJsonAsync(_createCarRoute, request);
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -106,7 +134,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var request = new CreateCarDto(
             _createTakenTestCar.Vin,
-            _createTakenTestCar.Brand,
+            _createTakenTestCar.BrandId.Value,
             _createTakenTestCar.Model,
             _createTakenTestCar.Price,
             _createTakenTestCar.FuelType,
@@ -130,7 +158,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         var carsInDb = await Context.Cars.CountAsync();
         var request = new CreateCarDto(
             _createInvalidTestCar.Vin,
-            _createInvalidTestCar.Brand,
+            _createInvalidTestCar.BrandId.Value,
             _createInvalidTestCar.Model,
             _createInvalidTestCar.Price,
             _createInvalidTestCar.FuelType,
@@ -153,7 +181,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var request = new UpdateCarDto(
             _updateValidTestCar.Vin,
-            _updateValidTestCar.Brand,
+            _updateValidTestCar.BrandId.Value,
             _updateValidTestCar.Model,
             _updateValidTestCar.Price,
             _updateValidTestCar.FuelType,
@@ -172,7 +200,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         var dbCar = await Context.Cars.FirstOrDefaultAsync(x => x.Id == _updateTakenTestCar.Id);
         dbCar.Should().NotBeNull();
         dbCar!.Vin.Should().Be(_updateValidTestCar.Vin);
-        dbCar.Brand.Should().Be(_updateValidTestCar.Brand);
+        dbCar.BrandId.Should().Be(_updateValidTestCar.BrandId);
         dbCar.Model.Should().Be(_updateValidTestCar.Model);
         dbCar.Price.Should().Be(_updateValidTestCar.Price);
         dbCar.FuelType.Should().Be(_updateValidTestCar.FuelType);
@@ -184,7 +212,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
     {
         var request = new UpdateCarDto(
             _createTakenTestCar.Vin,
-            _updateValidTestCar.Brand,
+            _updateValidTestCar.BrandId.Value,
             _updateValidTestCar.Model,
             _updateValidTestCar.Price,
             _updateValidTestCar.FuelType,
@@ -200,7 +228,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         var dbCar = await Context.Cars.SingleAsync(x => x.Id == _updateTakenTestCar.Id);
         dbCar.Id.Value.Should().Be(_updateTakenTestCar.Id.Value);
         dbCar.Vin.Should().Be(_updateTakenTestCar.Vin);
-        dbCar.Brand.Should().Be(_updateTakenTestCar.Brand);
+        dbCar.BrandId.Should().Be(_updateTakenTestCar.BrandId);
         dbCar.Model.Should().Be(_updateTakenTestCar.Model);
         dbCar.Price.Should().Be(_updateTakenTestCar.Price);
     }
@@ -211,7 +239,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var request = new UpdateCarDto(
             _updateInvalidTestCar.Vin,
-            _updateInvalidTestCar.Brand,
+            _updateInvalidTestCar.BrandId.Value,
             _updateInvalidTestCar.Model,
             _updateInvalidTestCar.Price,
             _updateInvalidTestCar.FuelType,
@@ -235,7 +263,7 @@ public class CarsControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var request = new UpdateCarDto(
             _updateValidTestCar.Vin,
-            _updateValidTestCar.Brand,
+            _updateValidTestCar.BrandId.Value,
             _updateValidTestCar.Model,
             _updateValidTestCar.Price,
             _updateValidTestCar.FuelType,
