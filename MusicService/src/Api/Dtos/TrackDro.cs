@@ -43,3 +43,16 @@ public record UpdateTrackDto(
     Genre Genre,
     bool IsExplicit,
     DateOnly ReleaseDate);
+
+public record SearchTrackDto(
+    string? Isrc,
+    string? Title,
+    string? Artist,
+    int? DurationSecondsFrom,
+    int? DurationSecondsTo,
+    Genre? Genre,
+    bool? IsExplicit,
+    DateOnly? ReleaseDateFrom,
+    DateOnly? ReleaseDateTo,
+    DateTime? CreatedAtFrom,
+    DateTime? CreatedAtTo);    

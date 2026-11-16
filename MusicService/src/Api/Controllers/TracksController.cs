@@ -92,4 +92,26 @@ public class TracksController(ISender sender, ITrackQueries trackQueries) : Cont
             _ => NoContent(),
             e => e.ToObjectResult());
     }
+    
+    [HttpPost("filter")]
+    public async Task<ActionResult<IReadOnlyList<TrackDto>>> Filter(
+        [FromBody] SearchTrackDto request,
+        CancellationToken cancellationToken)
+    {
+        var tracks = await trackQueries.Filter(
+            request.Isrc,
+            request.Title,
+            request.Artist,
+            request.DurationSecondsFrom,
+            request.DurationSecondsTo,
+            request.Genre,
+            request.IsExplicit,
+            request.ReleaseDateFrom,
+            request.ReleaseDateTo,
+            request.CreatedAtFrom,
+            request.CreatedAtTo,
+            cancellationToken);
+
+        return Ok(tracks.Select(TrackDto.FromDomainModel).ToList());
+    }
 }
