@@ -64,17 +64,17 @@ public class TrackRepository(ApplicationDbContext context) : ITrackRepository, I
 
         if (!string.IsNullOrWhiteSpace(isrc))
         {
-            query = query.Where(x => EF.Functions.ILike(x.Isrc, $"%{isrc}%"));
+            query = query.Where(x => x.Isrc.ToLower().Contains(isrc.ToLower()));
         }
 
         if (!string.IsNullOrWhiteSpace(title))
         {
-            query = query.Where(x => EF.Functions.ILike(x.Title, $"%{title}%"));
+            query = query.Where(x => x.Title.ToLower().Contains(title.ToLower()));
         }
 
         if (!string.IsNullOrWhiteSpace(artist))
         {
-            query = query.Where(x => EF.Functions.ILike(x.Artist, $"%{artist}%"));
+            query = query.Where(x => x.Artist.ToLower().Contains(artist.ToLower()));
         }
 
         if (durationSecondsFrom.HasValue)
